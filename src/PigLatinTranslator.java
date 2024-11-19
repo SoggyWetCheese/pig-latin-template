@@ -1,3 +1,4 @@
+
 import java.lang.*;
 
 public class PigLatinTranslator
@@ -13,82 +14,116 @@ public class PigLatinTranslator
   }
 
   public static String translate(String input) {
+    // Makes sure words actually exists, returns empty sentences.
     if (input.trim().isEmpty()) {
         return input;
     }
 
+
+    // Splits the sentence into words
     String[] words = input.split("\\s+");
     String result = "";
 
     for (String word : words) {
-        String punctuation = "";
-        int punctuationIndex = word.length() - 1;
+        // Early detection for hyphens
+        if (word.contains("-")) {
+            String[] parts = word.split("-");
+            StringBuilder pigLatinWord = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                // Apply pig latin translations seperately
+                String pigLatinPart = translatePart(parts[i]);
 
-        // Handle punctuation at the end of the word
-        while (punctuationIndex >= 0 && !Character.isLetterOrDigit(word.charAt(punctuationIndex))) {
-            punctuation = word.charAt(punctuationIndex) + punctuation;
-            punctuationIndex--;
+                // "Glues" finished parts back using a hyphen
+                pigLatinWord.append(pigLatinPart);
+                if (i < parts.length - 1) {
+                    pigLatinWord.append("-");
+                }
+            }
+
+            // Add word to result
+            result += pigLatinWord + " ";
+        } else {
+            // Uses normal word translation if there is no hyphen.
+            result += translatePart(word) + " ";
         }
-
-        // Get the base word without punctuation
-        word = word.substring(0, punctuationIndex + 1);
-
-        if (word.trim().length() > 0) {
-            // Save the original word to preserve case
-            String originalWord = word;
-
-            // Apply Pig Latin rules to the word in lowercase
-            String pigLatin = word.toLowerCase();
-            boolean isVowel = pigLatin.charAt(0) == 'a' || pigLatin.charAt(0) == 'e' || pigLatin.charAt(0) == 'i' || pigLatin.charAt(0) == 'o' || pigLatin.charAt(0) == 'u';
-
-            if (isVowel) {
-                pigLatin += "ay";
-            } else {
-                int vowelIndex = -1;
-                for (int i = 0; i < pigLatin.length(); i++) {
-                    if ("aeiou".indexOf(pigLatin.charAt(i)) != -1) {
-                        vowelIndex = i;
-                        break;
-                    }
-                }
-
-                if (vowelIndex != -1) {
-                    pigLatin = pigLatin.substring(vowelIndex) + pigLatin.substring(0, vowelIndex) + "ay";
-                }
-            }
-
-            // Now we need to rebuild the word with proper capitalization from originalWord
-            StringBuilder finalWord = new StringBuilder();
-
-            // Capitalize the first letter of the transformed word if the original first letter was capitalized
-            if (Character.isUpperCase(originalWord.charAt(0))) {
-                finalWord.append(Character.toUpperCase(pigLatin.charAt(0))); // Capitalize first letter
-            } else {
-                finalWord.append(Character.toLowerCase(pigLatin.charAt(0))); // Lowercase if the original first letter was lowercase
-            }
-
-            // Rebuild the rest of the word, ensuring only the first vowel and first letter are capitalized (no consonants like 'r' are capitalized)
-            for (int i = 1; i < pigLatin.length(); i++) {
-                if (i < originalWord.length()) {
-                    if (Character.isUpperCase(originalWord.charAt(i)) && pigLatin.charAt(i) == 'h') {
-                        finalWord.append(Character.toUpperCase(pigLatin.charAt(i))); // Only capitalize 'h' if it was capitalized in the original
-                    } else {
-                        finalWord.append(Character.toLowerCase(pigLatin.charAt(i))); // Keep consonants lowercase
-                    }
-                } else {
-                    finalWord.append(pigLatin.charAt(i)); // If the transformed word is longer (e.g., with "ay")
-                }
-            }
-
-            word = finalWord.toString(); // Final transformed word
-        }
-
-        // Append the word with its punctuation and continue
-        result += word + punctuation + " ";
     }
 
     return result.trim();
 }
+
+private static String translatePart(String word) {
+    // Contains punctution at beginning or the end of a word (e.g: , . ! () ; etc)
+    String punctuationStart = "";
+    String punctuationEnd = "";
+    int punctuationIndex;
+
+    // Punctuation finder(beginning)
+    punctuationIndex = 0;
+    while (punctuationIndex <= word.length()-1 && !Character.isLetterOrDigit(word.charAt(punctuationIndex))) {
+        punctuationStart = punctuationStart + word.charAt(punctuationIndex);
+        punctuationIndex++;
+    }
+
+    // Removes puntuation from beginning of the word if necessary
+    word = word.substring(punctuationIndex);
+
+    // Punctuation finder (end)
+    punctuationIndex = word.length()-1;
+    while (punctuationIndex >= 0 && !Character.isLetterOrDigit(word.charAt(punctuationIndex))) {
+        punctuationEnd = word.charAt(punctuationIndex) + punctuationEnd;
+        punctuationIndex--;
+    }
+
+    // ditto, but back
+    word = word.substring(0, punctuationIndex + 1);
+
+    // pig latin translation factory
+    if (word.trim().length() > 0) {
+        
+        // Retains original word for future reference
+        String originalWord = word;
+        
+        // pigLatin sets up a reference to use for translation, does not makes first letter lowercase so it does not get jumbled in later
+        String pigLatin = word.substring(0,1).toLowerCase() + word.substring(1);
+        // finds if the first letter is a vowel
+        boolean isVowel = "aeiou".indexOf(pigLatin.charAt(0)) != -1;
+
+        // Pre-op process, skips if first letter is a vowel
+        if (isVowel) {
+            pigLatin += "ay";
+        } else {
+
+            // If first letter is a consonant, finds first vowel.
+            int pigStart = -1;
+            for (int i = 0; i < pigLatin.length(); i++) {
+                if ("aeiouAEIOU".indexOf(pigLatin.charAt(i)) != -1) {
+                    pigStart = i;
+
+                    // Breaks when vowel is found
+                    break;
+                }
+            }
+
+            // if vowel is found, makes pig latin word as needed
+            if (pigStart != -1) {
+                pigLatin = pigLatin.substring(pigStart) + pigLatin.substring(0, pigStart) + "ay";
+            }
+        }
+
+
+        //Used to Capitalize the word if needed (final step)
+        if (Character.isUpperCase(originalWord.charAt(0))) {
+            word = Character.toUpperCase(pigLatin.charAt(0)) + pigLatin.substring(1);
+        } else {
+            word = pigLatin;
+        }
+
+
+    }
+
+    return punctuationStart + word + punctuationEnd;
+}
+
 
 
 
