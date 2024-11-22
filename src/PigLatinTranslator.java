@@ -1,5 +1,7 @@
 
 import java.lang.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PigLatinTranslator
 {
@@ -7,15 +9,26 @@ public class PigLatinTranslator
   {
     Book translatedBook = new Book();
 
-    // Add code here to populate translatedBook with a translation of the input book.
-    // Curent do-nothing code will return an empty book.
+    translatedBook.setTitle(input.getTitle());
+
+    // Loop through each line in the original book and translate it
+    for (int i = 0; i < input.getLineCount(); i++) {
+        // Get the current line
+        String line = input.getLine(i);
+        
+        // Translate the line using the existing translate method
+        String translatedLine = translate(line);
+        
+        // Add the translated line to the new book
+        translatedBook.appendLine(translatedLine);
+    }
 
     return translatedBook;
   }
 
   public static String translate(String input) {
     // Makes sure words actually exists, returns empty sentences.
-    if (input.trim().isEmpty()) {
+    if (input.trim().isEmpty() || input.trim().isBlank() || input == null) {
         return input;
     }
 
